@@ -1,0 +1,207 @@
+body {
+    font-family: roboto, sans-serif, Arial;
+    margin: 0;
+    color: #3d3d3d;
+    --mdc-theme-primary: #007f8b;
+    --mdc-theme-on-primary: #f1f3f4;
+}
+
+h1 {
+    color: #007f8b;
+}
+
+h2 {
+    clear: both;
+}
+
+video {
+    clear: both;
+    display: none;
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    /*height: 280px;*/
+
+}
+
+section {
+    opacity: 1;
+    transition: opacity 500ms ease-in-out;
+}
+
+.removed {
+    display: none;
+}
+
+.invisible {
+    opacity: 0.2;
+}
+
+.detectOnClick {
+    position: relative;
+    float: left;
+    width: 48%;
+    margin: 2% 1%;
+    cursor: pointer;
+}
+
+.videoView {
+    position: absolute;
+    float: left;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
+    /*min-height: 500px;*/
+    /*z-index: 10;*/
+    pointer-events: none;
+}
+
+.videoView p,
+.detectOnClick p {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-color: #007f8b;
+    color: #fff;
+    border: 1px dashed rgba(255, 255, 255, 0.7);
+    z-index: 2;
+    margin: 0;
+}
+
+.highlighter {
+    background: rgba(0, 255, 0, 0.25);
+    border: 1px dashed #fff;
+    z-index: 1;
+    position: absolute;
+}
+
+.canvas {
+    z-index: 1;
+    position: fixed;
+    pointer-events: none;
+}
+
+.output_canvas {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    opacity: 0.5;
+    position: fixed;
+    z-index: 10;
+}
+
+.detectOnClick {
+    z-index: 0;
+    font-size: calc(8px + 1.2vw);
+}
+
+.detectOnClick img {
+    width: 45vw;
+}
+
+.output {
+    display: none;
+    width: 100%;
+    font-size: calc(8px + 1.2vw);
+}
+
+#gesture_output {
+    font-size: calc(8px + 0.2vw);
+    position: fixed;
+    bottom: 0;
+    z-index: 0;
+    opacity: 0.3;
+}
+
+form {
+    /*margin: 0 auto;*/
+    max-width: 360px;
+    position: absolute;
+
+}
+
+input {
+    background: #efefef;
+    border: 0.2rem solid #bbb;
+    box-sizing: border-box;
+    font-size: 2rem;
+    padding: 1rem;
+    text-align: center;
+    width: 100%;
+}
+
+button {
+    background: #4b7b75;
+    border: 0.2rem solid transparent;
+    color: #fefefe;
+    cursor: pointer;
+    font-size: 2rem;
+    padding: 1rem;
+    text-align: center;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #7aa5c7;
+}
+
+button:active {
+    background-color: #769dbe;
+}
+
+button:last-of-type {
+}
+
+#keypad {
+    background-color: #6994b7;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    padding: 0.5rem;
+}
+
+#keypad p {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 0.2rem solid transparent;
+    cursor: pointer;
+    font-size: 2rem;
+    margin: 0.2rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+#keypad p:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+#keypad p:active {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+#keypad p[data-value="clear"] {
+    font-size: 140%;
+    line-height: 180%;
+}
+
+#keypad p[data-value="back"] {
+    font-size: 280%;
+    line-height: 70%;
+}
+
+.test-elements {
+    z-index: 100;
+}
+
+.click-hovered {
+    background: #f79582 !important;
+    color: #f23434 !important;
+    background-color: rgba(247, 149, 130, 0.9) !important;
+}
+
+.drag-hovered {
+    background: #f7e282 !important;
+    color: #6f622a !important;
+    background-color: rgba(247, 202, 130, 0.9) !important;
+}
+
+#drg-container {
+    transition: all ease-in-out .5s;
+}

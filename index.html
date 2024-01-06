@@ -1,0 +1,359 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MediaPipe HandGestureRecognizer Test</title>
+    <link href="./node_modules/material-components-web/dist/material-components-web.min.css" rel="stylesheet">
+    <script src="./node_modules/material-components-web/dist/material-components-web.min.js"></script>
+    <link href="./styles.css" rel="stylesheet">
+</head>
+<body translate="no">
+
+<section id="demos" class="">
+
+    <button id="webcamButton" class="mdc-button mdc-button--raised">
+        <span class="mdc-button__ripple"></span>
+        <span class="mdc-button__label">ENABLE WEBCAM</span>
+    </button>
+
+    <div id="liveView" class="videoView">
+
+        <div style="position: relative;">
+            <video id="webcam" autoplay="" playsinline=""></video>
+            <!-- TODO: width and height needs to be set automatically by a function and watched for resize... -->
+            <canvas class="output_canvas" id="output_canvas" width="1980px" height="1024px"
+                    style="position: absolute; left: 0px; top: 0px;"></canvas>
+            <p id="gesture_output" class="output">
+            </p>
+        </div>
+    </div>
+
+    <div class="test-elements">
+        <form action="" id="drg-container" name="keypad" method="post" class="center-text" onload="emptyCode();">
+            <p id="message" class="success"></p>
+            <button class="drag hoverable" id="drag" type="button">DRAG</button>
+            <input type="text" name="code" value="" maxlength="6" readonly="readonly" class="hoverable">
+
+            <div id="keypad" class="mobile-full  tablet-full">
+                <p data-value="1" class="hoverable">1</p>
+                <p data-value="2" class="hoverable">2</p>
+                <p data-value="3" class="hoverable">3</p>
+                <p data-value="4" class="hoverable">4</p>
+                <p data-value="5" class="hoverable">5</p>
+                <p data-value="6" class="hoverable">6</p>
+                <p data-value="7" class="hoverable">7</p>
+                <p data-value="8" class="hoverable">8</p>
+                <p data-value="9" class="hoverable">9</p>
+                <p data-value="clear" class="hoverable">C</p>
+                <p data-value="0" class="hoverable">0</p>
+                <p data-value="back" class="hoverable">&laquo;</p>
+            </div>
+            <!--Change the button's data-value attr to "submit" for form submission-->
+            <button data-value="clear" class="hoverable">Submit</button>
+        </form>
+    </div>
+
+</section>
+
+<script id="rendered-js" type="module">
+
+    document.addEventListener(
+        "click",
+        function (event) {
+            if (event.target.getAttribute("data-value")) {
+                var val = event.target.getAttribute("data-value");
+                switch (val) {
+                    case "submit":
+                        submitForm();
+                        return;
+                    case "clear":
+                        emptyCode();
+                        return;
+                        break;
+
+                    case "back":
+                        backSpace();
+                        return;
+                        break;
+
+                    default:
+                        addCode(val);
+                        break;
+                }
+            }
+        },
+        false
+    );
+
+    function addCode(key) {
+        var maxlength = 50; //submits form after this number digits
+        var code = document.forms[0].code;
+        if (code.value.length < maxlength) {
+            code.value = code.value + key;
+        }
+        if (code.value.length == maxlength) {
+            document.getElementById("message").style.visibility = "visible";
+            setTimeout(submitForm, 1000);
+        }
+    }
+
+    function emptyCode() {
+        document.forms[0].code.value = "";
+    }
+
+    function backSpace() {
+        document.keypad.code.value = document.keypad.code.value.substring(
+            0,
+            document.keypad.code.value.length * 1 - 1
+        );
+    }
+
+    function submitForm() {
+        // document.forms[0].submit();
+        document.forms[0].code.value = "";
+        alert('Submited');
+    }
+
+
+    import {
+        GestureRecognizer,
+        FilesetResolver,
+        DrawingUtils
+    } from "./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs";
+
+    const demosSection = document.getElementById("demos");
+    let gestureRecognizer;
+    // let runningMode = "IMAGE";
+    let runningMode = "VIDEO";
+    let enableWebcamButton;
+    let webcamRunning = false;
+    const videoHeight = "1080px";
+    const videoWidth = "1920px";
+
+    // Before we can use HandLandmarker class we must wait for it to finish
+    // loading. Machine Learning models can be large and take a moment to
+    // get everything needed to run.
+
+    const createGestureRecognizer = async () => {
+        const vision = await FilesetResolver.forVisionTasks("./node_modules/@mediapipe/tasks-vision/wasm");
+        gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: "./mediapipe-models/gesture_recognizer.task",
+                // modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
+                delegate: "GPU"
+            },
+            num_hands: 2,
+            runningMode: runningMode
+        });
+        demosSection.classList.remove("invisible");
+    };
+    createGestureRecognizer();
+
+
+    /********************************************************************
+     // Continuously grab image from webcam stream and detect it.
+     ********************************************************************/
+    const video = document.getElementById("webcam");
+    const canvasElement = document.getElementById("output_canvas");
+    const canvasCtx = canvasElement.getContext("2d");
+    const gestureOutput = document.getElementById("gesture_output");
+    let preCategoryName = '';
+    let pointingUpWaiting = false;
+
+    // Check if webcam access is supported.
+    function hasGetUserMedia() {
+        return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    }
+
+    // If webcam supported, add event listener to button for when user wants to activate it.
+    if (hasGetUserMedia()) {
+        enableWebcamButton = document.getElementById("webcamButton");
+        enableWebcamButton.addEventListener("click", enableCam);
+    } else {
+        console.warn("getUserMedia() is not supported by your browser");
+    }
+
+    // Enable the live webcam view and start detection.
+    function enableCam(event) {
+        if (!gestureRecognizer) {
+            alert("Please wait for gestureRecognizer to load");
+            return;
+        }
+
+        if (webcamRunning === true) {
+            webcamRunning = false;
+            enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+        } else {
+            webcamRunning = true;
+            enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+        }
+        // getUsermedia parameters.
+        const constraints = {
+            video: true
+        };
+        // Activate the webcam stream.
+        navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            video.srcObject = stream;
+            video.addEventListener("loadeddata", predictWebcam);
+        });
+    }
+
+    let lastVideoTime = -1;
+    let results = undefined;
+    let prevHovered;
+    let dragging;
+
+    function interpolateX(value, fromRange, toRange) {
+        let scale = (value - fromRange[0]) / (fromRange[1] - fromRange[0]);
+        return Math.round(toRange[0] + (toRange[1] - toRange[0]) * scale);
+    }
+
+    function click(x, y) {
+        const ev = new MouseEvent('click', {
+            'view': window,
+            'bubbles': true,
+            'cancelable': true,
+            'screenX': x,
+            'screenY': y
+        });
+
+        const el = document.elementFromPoint(x, y);
+        console.log(el);
+        el.dispatchEvent(ev);
+    }
+
+    async function predictWebcam() {
+        const webcamElement = document.getElementById("webcam");
+
+        // Now let's start detecting the stream.
+        if (runningMode === "IMAGE") {
+            runningMode = "VIDEO";
+            await gestureRecognizer.setOptions({runningMode: "VIDEO"});
+        }
+
+        let nowInMs = Date.now();
+        if (video.currentTime !== lastVideoTime) {
+            lastVideoTime = video.currentTime;
+            results = gestureRecognizer.recognizeForVideo(video, nowInMs);
+        }
+
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        const drawingUtils = new DrawingUtils(canvasCtx);
+        canvasElement.style.height = videoHeight;
+        webcamElement.style.height = videoHeight;
+        canvasElement.style.width = videoWidth;
+        webcamElement.style.width = videoWidth;
+
+        if (results.landmarks) {
+            for (const landmarks of results.landmarks) {
+                drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
+                    color: "#37b8a3",
+                    lineWidth: 2
+                });
+                drawingUtils.drawLandmarks(landmarks, {
+                    color: "#d7451c",
+                    lineWidth: 2
+                });
+            }
+        }
+        canvasCtx.restore();
+
+        if (results.gestures.length > 0) {
+            gestureOutput.style.display = "block";
+            gestureOutput.style.width = videoWidth;
+            const categoryName = results.gestures[0][0].categoryName;
+            const categoryScore = parseFloat(results.gestures[0][0].score * 100).toFixed(2);
+            const handedness = results.handednesses[0][0].displayName;
+            const pointerX = results.landmarks[0][8]['x'];
+            const pointerY = results.landmarks[0][8]['y'];
+            const pointerZ = results.landmarks[0][8]['z'];
+            let firstXRange = [1.0, 0.001];
+            let secondXRange = [0.001, 1920.0];
+            let firstYRange = [0.001, 1.0];
+            let secondYRange = [0.001, 1024.0];
+            // TODO: finetune Z, actually it could be used to detect pressing or depth...
+            let firstZRange = [0.3, 0.01];
+            let secondZRange = [0.1, 100];
+
+            const x = interpolateX(pointerX, firstXRange, secondXRange);
+            const y = interpolateX(pointerY, firstYRange, secondYRange);
+            const z = interpolateX(pointerZ, firstZRange, secondZRange);
+
+            gestureOutput.innerText = `GestureRecognizer: ${categoryName},` +
+            `Confidence: ${categoryScore} %, Handedness: ${handedness}` +
+            `Results.Landmarks.X: ${JSON.stringify(results.landmarks[0][8]['x'])},` +
+            `Results.Landmarks.Y: ${JSON.stringify(results.landmarks[0][8]['y'])},` +
+            `Results.Landmarks.Z: ${JSON.stringify(results.landmarks[0][8]['z'])},` +
+            `Window X,Y,Z: ${x}, ${y}, ${z}`;
+
+            const hovered = document.elementFromPoint(x, y);
+
+            /* Pointing_Up */
+            if (categoryName === 'Pointing_Up' && hovered) {
+                if (prevHovered && prevHovered !== hovered) {
+                    prevHovered.classList.remove('click-hovered');
+                }
+                if (!hovered.classList.contains("click-hovered") && prevHovered !== hovered && hovered.classList.contains("hoverable")) {
+                    hovered.classList.add('click-hovered');
+                }
+                prevHovered = hovered;
+            }
+
+            if (!pointingUpWaiting && results.gestures[0][0] && results.gestures[0][0].categoryName !== 'Pointing_Up' && preCategoryName === 'Pointing_Up') {
+                pointingUpWaiting = true;
+                setTimeout(() => {
+                    if (results.gestures[0] && results.gestures[0][0].categoryName === 'Pointing_Up') {
+                        console.log(results.gestures[0][0].categoryName);
+                        click(x, y);
+                    }
+                    pointingUpWaiting = false;
+                    if (results.gestures[0]) {
+                        preCategoryName = results.gestures[0][0].categoryName;
+                    }
+                }, 500);
+
+            }
+
+            if (categoryName === 'Pointing_Up') {
+                preCategoryName = categoryName;
+            }
+
+            if (categoryName === 'Closed_Fist' && hovered && !dragging) {
+                // console.log('preparing to Drag...', hovered.classList)
+                if (hovered.classList.contains("drag")) {
+                    if (!hovered.classList.contains("drag-hovered")) {
+                        hovered.classList.add('drag-hovered');
+                    }
+                    dragging = hovered;
+
+                    console.log('Dragging...', dragging)
+                }
+                prevHovered = hovered;
+            }
+
+            if (categoryName !== 'Closed_Fist' && prevHovered && dragging) {
+                // Clean drag class if released
+                if (dragging.classList.contains("drag-hovered")) {
+                    dragging.classList.remove('drag-hovered');
+                    console.log('Released...', dragging);
+                    let drag_el = document.getElementById("drg-container");
+                    drag_el.style.left = x;
+                    drag_el.style.top = y;
+                    dragging = null;
+                }
+            }
+
+
+        } else {
+            gestureOutput.style.display = "none";
+        }
+        // Call this function again to keep predicting when the browser is ready.
+        if (webcamRunning === true) {
+            window.requestAnimationFrame(predictWebcam);
+        }
+    }
+
+</script>
+
+</body>
+</html>
