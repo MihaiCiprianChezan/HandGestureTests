@@ -5,8 +5,8 @@
     <link href="./node_modules/material-components-web/dist/material-components-web.min.css" rel="stylesheet">
     <script src="./node_modules/material-components-web/dist/material-components-web.min.js"></script>
     <link href="./styles.css" rel="stylesheet">
-<!--    <script src="./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs"-->
-<!--            crossorigin="anonymous"></script>-->
+    <!--    <script src="./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs"-->
+    <!--            crossorigin="anonymous"></script>-->
 </head>
 
 <body translate="no">
@@ -145,9 +145,9 @@
             },
             numHands: 2,
             runningMode: runningMode,
-            minHandDetectionConfidence: 0.8,
-            minHandPresenceConfidence: 0.8,
-            minTrackingConfidence: 0.8
+            minHandDetectionConfidence: 0.5,
+            minHandPresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
         demosSection.classList.remove("invisible");
     };
@@ -248,6 +248,7 @@
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         const drawingUtils = new DrawingUtils(canvasCtx);
+
         canvasElement.style.height = videoHeight;
         webcamElement.style.height = videoHeight;
         canvasElement.style.width = videoWidth;
@@ -256,12 +257,12 @@
         if (results.landmarks) {
             for (const landmarks of results.landmarks) {
                 drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
-                    color: "#64ca00",
-                    lineWidth: 2
+                    color: "#69c023",
+                    lineWidth: 1
                 });
                 drawingUtils.drawLandmarks(landmarks, {
-                    color: "#d43203",
-                    lineWidth: 2
+                    color: "#f16539",
+                    lineWidth: 0.5
                 });
             }
         }
@@ -322,7 +323,7 @@
                 }
                 prevHovered = hovered;
             } else {
-                if (prevHovered ) {
+                if (prevHovered) {
                     // prevHovered.classList.remove('click-hovered');
                 }
 
