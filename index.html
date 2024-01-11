@@ -30,7 +30,6 @@
 
     <div class="test-elements">
         <form action="" id="drg-container" name="keypad" method="post" class="center-text" onload="emptyCode();">
-            <p id="message" class="success"></p>
             <button class="drag" id="drag" type="button">DRAG</button>
             <input type="text" name="code" value="" maxlength="6" readonly="readonly">
 
@@ -46,7 +45,7 @@
                 <p data-value="9" class="hoverable">9</p>
                 <p data-value="clear" class="hoverable">C</p>
                 <p data-value="0" class="hoverable">0</p>
-                <p data-value="back" class="hoverable">&laquo;</p>
+                <p data-value="back" class="hoverable"><</p>
             </div>
             <!--Change the button's data-value attr to "submit" for form submission-->
             <button data-value="clear" class="hoverable">Submit</button>
@@ -63,7 +62,7 @@
         "click",
         function (event) {
             if (event.target.getAttribute("data-value")) {
-                var val = event.target.getAttribute("data-value");
+                const val = event.target.getAttribute("data-value");
                 switch (val) {
                     case "submit":
                         submitForm();
@@ -88,12 +87,12 @@
     );
 
     function addCode(key) {
-        var maxlength = 50; //submits form after this number digits
-        var code = document.forms[0].code;
+        const maxlength = 50; //submits form after this number digits
+        const code = document.forms[0].code;
         if (code.value.length < maxlength) {
             code.value = code.value + key;
         }
-        if (code.value.length == maxlength) {
+        if (code.value.length === maxlength) {
             document.getElementById("message").style.visibility = "visible";
             setTimeout(submitForm, 1000);
         }
@@ -323,8 +322,10 @@
                 }
                 prevHovered = hovered;
             } else {
-                if (prevHovered )
-                prevHovered.classList.remove('click-hovered');
+                if (prevHovered ) {
+                    // prevHovered.classList.remove('click-hovered');
+                }
+
             }
 
             // Pinter finger Click...

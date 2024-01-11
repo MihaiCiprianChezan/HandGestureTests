@@ -1,13 +1,14 @@
 body {
-    font-family: roboto, sans-serif, Arial;
+    font-family: system-ui, roboto, sans-serif, Arial;
     margin: 0;
     color: #3d3d3d;
-    --mdc-theme-primary: #007f8b;
-    --mdc-theme-on-primary: #f1f3f4;
+    --mdc-theme-primary: #f1f3f4;
+    --mdc-theme-on-primary: #376fb8;
+    background-color: #e4efff;
 }
 
 h1 {
-    color: #007f8b;
+    color: #376fb8;
 }
 
 h2 {
@@ -128,78 +129,99 @@ section {
     position: fixed;
     bottom: 0;
     z-index: 0;
-    opacity: 0.5;
+    opacity: 0.8;
     display: block;
 }
 
 form {
     /*margin: 0 auto;*/
+    font-family: system-ui, roboto, sans-serif, Arial;
     max-width: 360px;
     position: absolute;
+    font-weight: 100;
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.33);
+    top:50px;
+    left:50px;
 
 }
 
 input {
-    background: #efefef;
-    border: 0.2rem solid #bbb;
+    background: #fbf3ce;
+    border: 0.1rem solid #7f9ec9;
+    border-top:none;
+    border-bottom: none;
     box-sizing: border-box;
     font-size: 2rem;
     padding: 1rem;
     text-align: center;
     width: 100%;
+    font-family: system-ui, roboto, sans-serif, Arial;
+    font-weight: 100;
 }
 
 button {
-    background: #4b7b75;
-    border: 0.2rem solid transparent;
-    color: #fefefe;
+    background: #fff;
+    border: 0.1rem solid #7f9ec9;
+    color: #7f9ec9;
     cursor: pointer;
     font-size: 2rem;
     padding: 1rem;
     text-align: center;
     width: 100%;
+    font-family: system-ui, roboto, sans-serif, Arial;
+    font-weight: 100;
 }
 
 button:hover {
-    background-color: #7aa5c7;
+    background-color: #b9cce7;
+    color: #13325d;
 }
 
 button:active {
-    background-color: #769dbe;
+    background-color: #b9cce7;
+    color: #13325d;
 }
 
 button:last-of-type {
 }
 
 #keypad {
-    background-color: #6994b7;
+    background-color: #fff;
     display: grid;
     grid-template-columns: auto auto auto;
     padding: 0.5rem;
+    border: 0.1rem solid #7f9ec9;
+    border-bottom: none;
 }
 
 #keypad p {
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 0.2rem solid transparent;
+    background-color: #fff;
+    border: 0.1rem solid #7f9ec9;
+    color: #7f9ec9;
     cursor: pointer;
     font-size: 2rem;
     margin: 0.2rem;
     padding: 1rem;
     text-align: center;
+    font-weight: 100;
+    user-select: none;
 }
 
-#keypad p:hover {
-    background-color: rgba(255, 255, 255, 0.8);
+.click-hovered, #keypad p:hover {
+    /*background-color: rgba(255, 255, 255, 0.8);*/
+    background-color: #b9cce7 !important;
+    color: #13325d !important;
+    border: 0.1rem solid #13325d !important;
 }
 
 #keypad p:active {
     background-color: rgba(255, 255, 255, 0.6);
 }
 
-#keypad p[data-value="clear"] {
-    font-size: 140%;
-    line-height: 180%;
-}
+/*#keypad p[data-value="clear"] {*/
+/*    font-size: 140%;*/
+/*    line-height: 180%;*/
+/*}*/
 
 #keypad p[data-value="back"] {
     font-size: 280%;
@@ -210,10 +232,11 @@ button:last-of-type {
     z-index: 100;
 }
 
-.click-hovered {
-    color: #b2e9ee !important;
-    background-color: rgb(9, 96, 88) !important;
-}
+/*.click-hovered {*/
+/*    color: #183254 !important;*/
+/*    background-color: #152f52; !important;*/
+/*    border: 0.1rem solid #183254;*/
+/*}*/
 
 .drag-hovered {
     color: #6f622a !important;
