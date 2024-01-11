@@ -5,16 +5,19 @@
     <link href="./node_modules/material-components-web/dist/material-components-web.min.css" rel="stylesheet">
     <script src="./node_modules/material-components-web/dist/material-components-web.min.js"></script>
     <link href="./styles.css" rel="stylesheet">
+<!--    <script src="./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs"-->
+<!--            crossorigin="anonymous"></script>-->
 </head>
+
 <body translate="no">
-
-<section id="demos" class="">
-
+<section id="ui-area" class="">
     <button id="webcamButton" class="mdc-button mdc-button--raised">
         <span class="mdc-button__ripple"></span>
-        <span class="mdc-button__label">ENABLE WEBCAM</span>
+        <span class="mdc-button__label">+ WEBCAM</span>
     </button>
+</section>
 
+<section id="screen-area" class="">
     <div id="liveView" class="videoView">
 
         <div style="position: relative;">
@@ -22,16 +25,14 @@
             <!-- TODO: width and height needs to be set automatically by a function and watched for resize... -->
             <canvas class="output_canvas" id="output_canvas" width="1980px" height="1024px"
                     style="position: absolute; left: 0px; top: 0px;"></canvas>
-            <p id="gesture_output" class="output">
-            </p>
         </div>
     </div>
 
     <div class="test-elements">
         <form action="" id="drg-container" name="keypad" method="post" class="center-text" onload="emptyCode();">
             <p id="message" class="success"></p>
-            <button class="drag hoverable" id="drag" type="button">DRAG</button>
-            <input type="text" name="code" value="" maxlength="6" readonly="readonly" class="hoverable">
+            <button class="drag" id="drag" type="button">DRAG</button>
+            <input type="text" name="code" value="" maxlength="6" readonly="readonly">
 
             <div id="keypad" class="mobile-full  tablet-full">
                 <p data-value="1" class="hoverable">1</p>
@@ -53,6 +54,8 @@
     </div>
 
 </section>
+
+<section id="gesture_output"></section>
 
 <script id="rendered-js" type="module">
 
@@ -120,14 +123,14 @@
         DrawingUtils
     } from "./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs";
 
-    const demosSection = document.getElementById("demos");
+    const demosSection = document.getElementById("screen-area");
     let gestureRecognizer;
     // let runningMode = "IMAGE";
     let runningMode = "VIDEO";
     let enableWebcamButton;
     let webcamRunning = false;
-    const videoHeight = "1080px";
-    const videoWidth = "1920px";
+    const videoHeight = screen.height + 'px';
+    const videoWidth = screen.width + 'px';
 
     // Before we can use HandLandmarker class we must wait for it to finish
     // loading. Machine Learning models can be large and take a moment to
@@ -141,8 +144,11 @@
                 // modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
                 delegate: "GPU"
             },
-            num_hands: 2,
-            runningMode: runningMode
+            numHands: 2,
+            runningMode: runningMode,
+            minHandDetectionConfidence: 0.8,
+            minHandPresenceConfidence: 0.8,
+            minTrackingConfidence: 0.8
         });
         demosSection.classList.remove("invisible");
     };
@@ -181,10 +187,10 @@
 
         if (webcamRunning === true) {
             webcamRunning = false;
-            enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+            enableWebcamButton.innerText = "+ WEBCAM";
         } else {
             webcamRunning = true;
-            enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+            enableWebcamButton.innerText = "- WEBCAM";
         }
         // getUsermedia parameters.
         const constraints = {
@@ -201,8 +207,10 @@
     let results = undefined;
     let prevHovered;
     let dragging;
+    let dragAnimating;
 
     function interpolateX(value, fromRange, toRange) {
+        // TODO: Maybe generating a matrix for all pixels would be faster...
         let scale = (value - fromRange[0]) / (fromRange[1] - fromRange[0]);
         return Math.round(toRange[0] + (toRange[1] - toRange[0]) * scale);
     }
@@ -218,7 +226,9 @@
 
         const el = document.elementFromPoint(x, y);
         console.log(el);
-        el.dispatchEvent(ev);
+        if (el) {
+            el.dispatchEvent(ev);
+        }
     }
 
     async function predictWebcam() {
@@ -247,11 +257,11 @@
         if (results.landmarks) {
             for (const landmarks of results.landmarks) {
                 drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
-                    color: "#37b8a3",
+                    color: "#64ca00",
                     lineWidth: 2
                 });
                 drawingUtils.drawLandmarks(landmarks, {
-                    color: "#d7451c",
+                    color: "#d43203",
                     lineWidth: 2
                 });
             }
@@ -259,37 +269,52 @@
         canvasCtx.restore();
 
         if (results.gestures.length > 0) {
+
+            const lHand = results.gestures[1];
+            const rHand = results.gestures[0];
+            const lHandLm = results.landmarks[1];
+            const rHandLm = results.landmarks[0];
+
             gestureOutput.style.display = "block";
             gestureOutput.style.width = videoWidth;
-            const categoryName = results.gestures[0][0].categoryName;
-            const categoryScore = parseFloat(results.gestures[0][0].score * 100).toFixed(2);
-            const handedness = results.handednesses[0][0].displayName;
-            const pointerX = results.landmarks[0][8]['x'];
-            const pointerY = results.landmarks[0][8]['y'];
-            const pointerZ = results.landmarks[0][8]['z'];
-            let firstXRange = [1.0, 0.001];
-            let secondXRange = [0.001, 1920.0];
-            let firstYRange = [0.001, 1.0];
-            let secondYRange = [0.001, 1024.0];
+
+            const firstXRange = [1.0, 0.001];
+            const secondXRange = [0.001, 1920.0];
+
+            const firstYRange = [0.001, 1.0];
+            const secondYRange = [0.001, 1080.0];
+
             // TODO: finetune Z, actually it could be used to detect pressing or depth...
-            let firstZRange = [0.3, 0.01];
-            let secondZRange = [0.1, 100];
+            const firstZRange = [0.3, 0.01];
+            const secondZRange = [0.1, 100];
 
-            const x = interpolateX(pointerX, firstXRange, secondXRange);
-            const y = interpolateX(pointerY, firstYRange, secondYRange);
-            const z = interpolateX(pointerZ, firstZRange, secondZRange);
 
-            gestureOutput.innerText = `GestureRecognizer: ${categoryName},` +
-            `Confidence: ${categoryScore} %, Handedness: ${handedness}` +
-            `Results.Landmarks.X: ${JSON.stringify(results.landmarks[0][8]['x'])},` +
-            `Results.Landmarks.Y: ${JSON.stringify(results.landmarks[0][8]['y'])},` +
-            `Results.Landmarks.Z: ${JSON.stringify(results.landmarks[0][8]['z'])},` +
-            `Window X,Y,Z: ${x}, ${y}, ${z}`;
+            // Pinter left hand <> mimic mouse pointer
+            const x = interpolateX(rHandLm[8]['x'], firstXRange, secondXRange);
+            const y = interpolateX(rHandLm[8]['y'], firstYRange, secondYRange);
+            const z = interpolateX(rHandLm[8]['z'], firstZRange, secondZRange);
 
-            const hovered = document.elementFromPoint(x, y);
+            gestureOutput.innerText =
+                `GestureRecognizer L: ${rHand[0].categoryName},` +
+                `Confidence: ${parseFloat(rHand[0].score * 100).toFixed(2)} %,` +
+                `Handedness: ${rHand[0].displayName},` +
+                `Results.Landmarks.X: ${JSON.stringify(rHandLm[8]['x'])},` +
+                `Results.Landmarks.Y: ${JSON.stringify(rHandLm[8]['y'])},` +
+                `Results.Landmarks.Z: ${JSON.stringify(rHandLm[8]['z'])},` +
+                `Window X,Y,Z: ${x}, ${y}, ${z} \n`;
+            //
+            // `GestureRecognizer L: ${rHand[0].categoryName},` +
+            // `Confidence: ${ parseFloat(rHand[0].score * 100).toFixed(2)} %,`+
+            // `Handedness: ${rHand[0].displayName},` +
+            // `Results.Landmarks.X: ${JSON.stringify(rHandLm[8]['x'])},` +
+            // `Results.Landmarks.Y: ${JSON.stringify(rHandLm[8]['y'])},` +
+            // `Results.Landmarks.Z: ${JSON.stringify(rHandLm[8]['z'])},` +
+            // `Window X,Y,Z: ${x}, ${y}, ${z}`;
+
+            let hovered = document.elementFromPoint(x, y);
 
             /* Pointing_Up */
-            if (categoryName === 'Pointing_Up' && hovered) {
+            if (rHand[0].categoryName === 'Pointing_Up' && hovered) {
                 if (prevHovered && prevHovered !== hovered) {
                     prevHovered.classList.remove('click-hovered');
                 }
@@ -297,41 +322,47 @@
                     hovered.classList.add('click-hovered');
                 }
                 prevHovered = hovered;
+            } else {
+                if (prevHovered )
+                prevHovered.classList.remove('click-hovered');
             }
 
-            if (!pointingUpWaiting && results.gestures[0][0] && results.gestures[0][0].categoryName !== 'Pointing_Up' && preCategoryName === 'Pointing_Up') {
+            // Pinter finger Click...
+            if (!pointingUpWaiting && rHand[0] && rHand[0].categoryName !== 'Pointing_Up' && preCategoryName === 'Pointing_Up') {
+                click(x, y);
+
                 pointingUpWaiting = true;
                 setTimeout(() => {
-                    if (results.gestures[0] && results.gestures[0][0].categoryName === 'Pointing_Up') {
-                        console.log(results.gestures[0][0].categoryName);
-                        click(x, y);
-                    }
+                    preCategoryName = rHand[0].categoryName;
                     pointingUpWaiting = false;
-                    if (results.gestures[0]) {
-                        preCategoryName = results.gestures[0][0].categoryName;
-                    }
                 }, 500);
-
             }
 
-            if (categoryName === 'Pointing_Up') {
-                preCategoryName = categoryName;
+            if (rHand[0].categoryName === 'Pointing_Up') {
+                preCategoryName = rHand[0].categoryName;
             }
 
-            if (categoryName === 'Closed_Fist' && hovered && !dragging) {
+            // Right hand dragging...
+            if (rHand[0].categoryName === 'Closed_Fist' && hovered && !dragging) {
                 // console.log('preparing to Drag...', hovered.classList)
                 if (hovered.classList.contains("drag")) {
                     if (!hovered.classList.contains("drag-hovered")) {
                         hovered.classList.add('drag-hovered');
                     }
                     dragging = hovered;
-
-                    console.log('Dragging...', dragging)
+                    console.log('Dragging...', dragging);
                 }
                 prevHovered = hovered;
             }
 
-            if (categoryName !== 'Closed_Fist' && prevHovered && dragging) {
+            if (rHand[0].categoryName === 'Closed_Fist' && hovered && dragging) {
+                // console.log('preparing to Drag...', hovered.classList)
+                let drag_el = document.getElementById("drg-container");
+                drag_el.style.left = x;
+                drag_el.style.top = y;
+            }
+
+            if (rHand[0].categoryName !== 'Closed_Fist' && prevHovered && dragging) {
                 // Clean drag class if released
                 if (dragging.classList.contains("drag-hovered")) {
                     dragging.classList.remove('drag-hovered');
@@ -342,11 +373,8 @@
                     dragging = null;
                 }
             }
-
-
-        } else {
-            gestureOutput.style.display = "none";
         }
+
         // Call this function again to keep predicting when the browser is ready.
         if (webcamRunning === true) {
             window.requestAnimationFrame(predictWebcam);

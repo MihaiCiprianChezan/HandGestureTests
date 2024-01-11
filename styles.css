@@ -14,6 +14,25 @@ h2 {
     clear: both;
 }
 
+#screen-area {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#ui-area {
+    position: absolute;
+    top: 0;
+    right: 50%;
+    max-width: 250px;
+    z-index: 1000;
+    text-align: center;
+}
+
+
+
 video {
     clear: both;
     display: none;
@@ -109,7 +128,8 @@ section {
     position: fixed;
     bottom: 0;
     z-index: 0;
-    opacity: 0.3;
+    opacity: 0.5;
+    display: block;
 }
 
 form {
@@ -191,17 +211,19 @@ button:last-of-type {
 }
 
 .click-hovered {
-    background: #f79582 !important;
-    color: #f23434 !important;
-    background-color: rgba(247, 149, 130, 0.9) !important;
+    color: #b2e9ee !important;
+    background-color: rgb(9, 96, 88) !important;
 }
 
 .drag-hovered {
-    background: #f7e282 !important;
     color: #6f622a !important;
     background-color: rgba(247, 202, 130, 0.9) !important;
 }
 
 #drg-container {
-    transition: all ease-in-out .5s;
+    transition: all ease-in-out .1s;
+}
+
+.hoverable {
+    transition: all ease-in-out .1s;
 }
